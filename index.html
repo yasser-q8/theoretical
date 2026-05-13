@@ -3,312 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>نايف للأغذية - تقرير تجميع الأصناف</title>
-    <!-- مكتبات خارجية -->
+    <title>نايف للأغذية - تقرير الصلاحية واختلاف الرصيد</title>
+    <!-- أيقونة الموقع (Favicon) -->
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #f5f7fb;
-            font-family: 'Segoe UI', 'Tahoma', 'Roboto', system-ui, sans-serif;
-            padding: 30px 20px;
-            color: #1e2a3a;
-        }
-
-        .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
-            overflow: hidden;
-            padding: 28px 32px 40px;
-            transition: all 0.2s;
-        }
-
-        /* رأس الشركة - شريط علوي أحمر */
-        .company-header {
-            background: #c0392b;
-            margin: -28px -32px 30px -32px;
-            padding: 20px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 20px;
-            border-bottom: 3px solid #ffc107;
-        }
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
-        .company-logo {
-            height: 65px;
-            width: auto;
-            object-fit: contain;
-            border-radius: 12px;
-            background: #fff3e0;
-            padding: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .company-name {
-            font-size: 1.7rem;
-            font-weight: 800;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            letter-spacing: -0.3px;
-        }
-        .upload-area {
-            background: rgba(255,255,240,0.2);
-            border-radius: 60px;
-            padding: 6px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            backdrop-filter: blur(2px);
-        }
-        .file-label {
-            background: #ffc107;
-            color: #c0392b;
-            padding: 8px 22px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            border: none;
-        }
-        .file-label:hover {
-            background: #ffca2c;
-            transform: scale(1.02);
-        }
-        #fileInput {
-            display: none;
-        }
-        .file-status {
-            color: #ffefd0;
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        /* أزرار التصدير */
-        .action-buttons {
-            display: flex;
-            gap: 18px;
-            justify-content: flex-end;
-            margin: 25px 0 20px;
-        }
-        .btn-excel {
-            background: #1e7e34;
-            color: white;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            transition: 0.2s;
-        }
-        .btn-pdf {
-            background: #c0392b;
-            color: white;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        .btn-excel:hover, .btn-pdf:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.05);
-        }
-        .btn-excel:disabled, .btn-pdf:disabled {
-            opacity: 0.5;
-            transform: none;
-            cursor: not-allowed;
-        }
-
-        /* الجدول */
-        .report-table-wrapper {
-            overflow-x: auto;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            margin-top: 10px;
-        }
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        .summary-table th {
-            background: #2c3e50;
-            color: white;
-            padding: 14px 12px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border-left: 1px solid #3e5a6b;
-            text-align: center;
-        }
-        .summary-table td {
-            padding: 12px 12px;
-            border-bottom: 1px solid #e9ecef;
-            text-align: center;
-            background-color: #fff;
-        }
-        .summary-table tr:hover td {
-            background-color: #fef5e7;
-        }
-        .summary-table th:first-child, .summary-table td:first-child {
-            text-align: center;
-        }
-        .total-row {
-            background: #f1f9fe;
-            font-weight: 700;
-        }
-        .no-data-msg {
-            text-align: center;
-            padding: 50px;
-            color: #7f8c8d;
-            font-size: 1rem;
-        }
-        .checkbox-select-all {
-            transform: scale(1.1);
-            cursor: pointer;
-            margin-left: 6px;
-        }
-        .item-checkbox {
-            transform: scale(1.05);
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-        }
-
-        /* توقيع المطور - بدون ألوان (رمادي محايد) */
-        .signature-card {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 10px 18px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 1000;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            border: 1px solid #7f8c8d;
-            text-decoration: none;
-            display: inline-block;
-            backdrop-filter: blur(2px);
-        }
-        .signature-card:hover {
-            transform: scale(1.02);
-            background: #1e2a3a;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-        }
-        .signature-card .name {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 3px;
-        }
-        .signature-card .title {
-            font-size: 0.65rem;
-            opacity: 0.85;
-        }
-        @media (max-width: 768px) {
-            .signature-card {
-                position: relative;
-                bottom: auto;
-                left: auto;
-                margin: 30px auto 0;
-                width: fit-content;
-                animation: none;
-            }
-        }
-        @media print {
-            .signature-card, .action-buttons, .upload-area, .file-label {
-                display: none;
-            }
-        }
-        footer {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 0.7rem;
-            color: #aaa;
-        }
-        .selection-info {
-            font-size: 0.8rem;
-            margin: 10px 0 5px;
-            color: #2c3e50;
-            background: #f8f9fa;
-            padding: 6px 12px;
-            border-radius: 30px;
-            display: inline-block;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Tahoma', 'Roboto', sans-serif; }
+        body { background: #f0f2f5; padding: 30px 20px; color: #1e2a3a; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; padding: 24px 28px; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 3px solid #d32f2f; padding-bottom: 20px; margin-bottom: 25px; }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-area img { height: 70px; width: auto; border-radius: 14px; }
+        .company-name { font-size: 1.8rem; font-weight: 800; color: #b32b2b; }
+        .sub { color: #2c3e66; font-weight: 600; }
+        .upload-grid { background: #f0f2f5; border-radius: 28px; padding: 20px; margin-bottom: 30px; }
+        .days-flex { display: flex; flex-wrap: wrap; gap: 25px; justify-content: space-between; }
+        .day-group { flex: 1; min-width: 260px; background: white; border-radius: 24px; padding: 18px 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-right: 4px solid #d32f2f; }
+        .day-group h3 { font-size: 1.3rem; margin-bottom: 15px; color: #b32b2b; border-right: 3px solid #d32f2f; padding-right: 12px; }
+        .file-field { margin-bottom: 18px; }
+        .file-field label { font-weight: 700; display: block; margin-bottom: 8px; background: #fef2f0; padding: 6px 12px; border-radius: 30px; color: #a12222; font-size: 0.85rem; }
+        .file-field input { display: block; width: 100%; padding: 8px 12px; border-radius: 30px; border: 1px solid #ccc; font-size: 0.8rem; background: #fff; }
+        .btn-analyze { background: linear-gradient(95deg, #d32f2f, #b71c1c); border: none; color: white; padding: 14px 32px; font-size: 1.2rem; font-weight: bold; border-radius: 60px; cursor: pointer; margin-top: 20px; width: 100%; transition: 0.2s; }
+        .btn-analyze:hover { transform: scale(1.01); background: #b71c1c; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; flex-wrap: wrap; }
+        .tab-btn { background: none; border: none; padding: 12px 28px; font-size: 1rem; font-weight: 600; cursor: pointer; border-radius: 40px 40px 0 0; transition: 0.2s; color: #4a5568; }
+        .tab-btn.active { background: #d32f2f; color: white; box-shadow: 0 -2px 0 white; }
+        .tab-pane { display: none; animation: fade 0.3s ease; }
+        .tab-pane.active { display: block; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+        
+        .alert-card { background: #fff5e8; border-right: 8px solid #ff9800; border-radius: 24px; margin-bottom: 20px; }
+        .alert-title { font-size: 1.4rem; font-weight: bold; color: #bf5e00; margin-bottom: 12px; padding: 18px 24px 0 24px; }
+        .alert-list { list-style: none; max-height: 500px; overflow-y: auto; padding: 0 24px 18px 24px; }
+        .alert-list li { background: #fff0db; margin: 8px 0; padding: 12px 18px; border-radius: 50px; font-weight: 500; border-right: 4px solid #ff9800; }
+        .diff-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .diff-table th { background: #2c3e66; color: white; padding: 10px; }
+        .diff-table td { border-bottom: 1px solid #e2e8f0; padding: 10px; background: #fff; }
+        .badge-warning { background: #ff9800; color: white; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; font-weight: bold; display: inline-block; margin: 2px; }
+        .badge-expired { background: #d32f2f; color: white; border-radius: 30px; padding: 4px 12px; }
+        footer { margin-top: 40px; text-align: center; font-size: 0.75rem; color: #5a6e85; border-top: 1px solid #ddd; padding-top: 20px; }
+        @media (max-width: 780px) { .container { padding: 16px; } .company-name { font-size: 1.2rem; } .tab-btn { padding: 8px 16px; } .day-group { min-width: 100%; } }
+        
+        .export-buttons { display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start; flex-wrap: wrap; }
+        .export-btn { background: #2c3e66; color: white; border: none; padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .export-btn.pdf-expiry { background: #2c3e66; }
+        .export-btn.pdf-diff { background: #1e5a3a; }
+        .export-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        
+        .signature-card { position: fixed; bottom: 16px; left: 16px; background: #e9ecef; color: #2c3e66; padding: 8px 14px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); font-size: 0.7rem; font-weight: 500; z-index: 1000; text-decoration: none; display: inline-block; border: 1px solid #cddae9; }
+        .signature-card:hover { transform: scale(1.02); background: #dce3ec; }
+        @media (max-width: 768px) { .signature-card { position: relative; bottom: auto; left: auto; margin: 20px auto 0; width: fit-content; } }
+        @media print { .signature-card { display: none; } }
     </style>
 </head>
 <body>
-<div class="main-container">
-    <div class="company-header">
+<div class="container">
+    <div class="header">
         <div class="logo-area">
-            <img id="companyLogoImg" class="company-logo" src="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg" alt="شعار نايف للأغذية" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23d32f2f%22%2F%3E%3Ctext%20x%3D%2210%22%20y%3D%2260%22%20fill%3D%22white%22%3E%D9%86%D8%A7%D9%8A%D9%81%3C%2Ftext%3E%3C%2Fsvg%3E';">
-            <div class="company-name">شركة نايف للأغذية</div>
+            <img src="https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg" alt="Naif Logo" id="companyLogoImg" onerror="this.src='https://via.placeholder.com/70?text=NAIF'">
+            <div><div class="company-name">شركة نايف للأغذية</div><div class="sub">نظام تتبع الصلاحية والرصيد</div></div>
         </div>
-        <div class="upload-area">
-            <label class="file-label" for="fileInput">📂 تحميل ملف Excel</label>
-            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
-            <span class="file-status" id="fileStatus">لم يتم رفع ملف بعد</span>
+        <div><i class="fas fa-chart-line" style="font-size: 2rem; color:#d32f2f;"></i></div>
+    </div>
+    
+    <div class="upload-grid">
+        <div class="days-flex" id="daysUploadContainer"></div>
+        <button class="btn-analyze" id="analyzeBtn"><i class="fas fa-cogs"></i> تحليل الملفات (تتبع الصلاحية والرصيد)</button>
+        <div style="font-size:12px; margin-top:12px; color:#555;">✅ يتم دمج ملفي كل يوم تلقائياً (الرئيسي + 24 ساعة). الصلاحية: الرصيد الافتتاحي يصلح ليومين، الاستلام الجديد يصلح ليومين من يوم الاستلام.</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="expiry">⚠️ مشاكل الصلاحية (مطلوب المتابعة)</button>
+        <button class="tab-btn" data-tab="diff">📊 اختلافات الرصيد المحسوب عن الفعلي</button>
+    </div>
+
+    <div id="expiryPane" class="tab-pane active">
+        <div class="export-buttons">
+            <button id="exportExpiryPdfBtn" class="export-btn pdf-expiry"><i class="fas fa-file-pdf"></i> تصدير تقرير الصلاحية PDF (أفقي)</button>
+        </div>
+        <div class="alert-card">
+            <div class="alert-title"><i class="fas fa-hourglass-end"></i> المنتجات المطلوب متابعتها (لم يتم استخدامها/تحويلها/إتلافها)</div>
+            <ul class="alert-list" id="expiryAlertList"><li style="background:transparent;">لم يتم رفع ملفات بعد</li></ul>
         </div>
     </div>
 
-    <div class="action-buttons">
-        <button id="exportExcelBtn" class="btn-excel" disabled>📎 تصدير Excel (جميع الأصناف)</button>
-        <button id="exportPdfBtn" class="btn-pdf" disabled>📄 تصدير PDF (المحدد فقط)</button>
-    </div>
-
-    <div id="reportContainer">
-        <div class="report-table-wrapper" id="tableViewWrapper">
-            <table class="summary-table" id="summaryTable">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;"><input type="checkbox" id="selectAllCheckbox" class="checkbox-select-all" disabled> تحديد</th>
-                        <th>#</th>
-                        <th>اسم الصنف (RMName)</th>
-                        <th>إجمالي الكمية المستهلكة</th>
-                        <th>وحدة القياس (UoM)</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="5" class="no-data-msg">📁 قم بتحميل ملف Excel لعرض التجميع</td></tr>
-                </tbody>
+    <div id="diffPane" class="tab-pane">
+        <div class="export-buttons">
+            <button id="exportDiffPdfBtn" class="export-btn pdf-diff"><i class="fas fa-file-pdf"></i> تصدير تقرير اختلاف الرصيد PDF (رأسي)</button>
+        </div>
+        <div class="alert-card" style="border-right-color: #2196F3;">
+            <div class="alert-title"><i class="fas fa-calculator"></i> سجل الاختلافات بين الرصيد المحسوب والرصيد الفعلي End Qty</div>
+            <table class="diff-table" id="diffTable">
+                <thead><tr><th>اليوم</th><th>الصنف</th><th>الرصيد المحسوب (FIFO)</th><th>الرصيد الفعلي (End Qty)</th><th>الفرق</th></tr></thead>
+                <tbody id="diffTbody"><tr><td colspan="5">لا توجد اختلافات بعد</td></tr></tbody>
             </table>
         </div>
-        <div id="selectionSummary" class="selection-info" style="margin-top: 12px;"></div>
     </div>
-    <footer>
-        * التقرير يجمع الكميات حسب "RMName" من عمود "Total Usage Qty" * يمكنك تحديد الأصناف قبل تصدير PDF
-    </footer>
+    <footer>صلاحية المنتج: 3 أيام (الرصيد الافتتاحي يصلح لليوم الحالي + الغد، الاستلام الجديد يصلح ليومين من تاريخ الاستلام). يتم خصم الكميات من أقدم دفعة أولاً (FIFO).</footer>
 </div>
 <a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
     <div class="name">Yasser Elkhateeb</div>
@@ -316,429 +112,491 @@
 </a>
 
 <script>
-    // --- المتغيرات العامة ---
-    let aggregatedData = [];      // { rmName, totalQty, uomName, id (index) }
-    let rawDataValid = false;
-    let selectedIndices = new Set(); // تخزين indices المحددة
-
-    // عناصر DOM
-    const fileInput = document.getElementById('fileInput');
-    const fileStatusSpan = document.getElementById('fileStatus');
-    const exportExcelBtn = document.getElementById('exportExcelBtn');
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
-    const tableBody = document.getElementById('tableBody');
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const selectionSummaryDiv = document.getElementById('selectionSummary');
-
-    // تحديث عرض عدد المحدد
-    function updateSelectionSummary() {
-        if (!rawDataValid || aggregatedData.length === 0) {
-            selectionSummaryDiv.innerHTML = '';
-            return;
-        }
-        const count = selectedIndices.size;
-        selectionSummaryDiv.innerHTML = `✅ الأصناف المحددة: ${count} من أصل ${aggregatedData.length} صنف. (سيتم تصدير المحدد فقط في PDF)`;
-        // تحديث حالة "تحديد الكل"
-        if (selectAllCheckbox) {
-            if (count === aggregatedData.length && aggregatedData.length > 0) {
-                selectAllCheckbox.checked = true;
-                selectAllCheckbox.indeterminate = false;
-            } else if (count === 0) {
-                selectAllCheckbox.checked = false;
-                selectAllCheckbox.indeterminate = false;
-            } else {
-                selectAllCheckbox.indeterminate = true;
-            }
-        }
-        // تمكين/تعطيل زر PDF بناءً على وجود عناصر محددة على الأقل
-        if (rawDataValid && selectedIndices.size > 0) {
-            exportPdfBtn.disabled = false;
-        } else {
-            exportPdfBtn.disabled = true;
-        }
+    // دالة تحويل الأرقام (تدعم الفاصلة)
+    function safeParseNumber(value) {
+        if (value === undefined || value === null || value === "") return 0;
+        let str = value.toString().trim();
+        str = str.replace(/,/g, '.');
+        str = str.replace(/[^0-9.-]/g, '');
+        let num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
     }
 
-    // تحديد/إلغاء تحديد جميع العناصر
-    function toggleSelectAll(checked) {
-        if (!rawDataValid) return;
-        selectedIndices.clear();
-        if (checked) {
-            for (let i = 0; i < aggregatedData.length; i++) {
-                selectedIndices.add(i);
-            }
-        }
-        renderTableBody(); // إعادة رسم الجدول لتحديث الـ checkboxes
-        updateSelectionSummary();
+    const TARGET_PRODUCTS = new Set([
+        "Beef Burger Big(برجر لحم كبير)", "Beef Burger Small(برجر لحم صغير)", "Chicken Burger Small  ( برجر دجاج صغير)",
+        "Chicken Nuggets( ناجيت تمبورا)", "French Fries 6×6 LW ( شبس لامب وستون)", "Twister Fries LW (بطاط حلزونية تويستر)",
+        "Bint Al-Deek  ( بنت الديك)", "Ch.Finger Fillet Spicy  ( اصابع فيليه فلفل)", "Chicken Big Fillet  ( بيج فيلية)",
+        "Chicken Big Fillet Spicy  ( بيج فيلية فلفل)", "Chicken Drum Stick ( درام ستيك)", "Chicken Fillet  ( فيليه عادي)",
+        "Chicken Fillet Spicy  ( فيليه فلفل)", "Chicken Finger Fillet  ( اصابع فيليه)", "Chicken Fried  ( دجاج فرايد عادي)",
+        "Chicken Fried Spicy  (دجاج فرايد فلفل)", "Chicken Kabab ( كباب دجاج)", "Chicken Shawarma  ( شاورما دجاج)",
+        "Chicken Small Wings Nor  جناح صغير عادي", "Chicken Small Wings Spicy  جناح صغير فلفل", "Chicken Tikka ( دجاج تكا عادي)",
+        "Chicken Tikka Brest ( تكا صدور)", "Chicken Tikka Thigh  (تكا فخذ)", "Chicken Wings  جناح متبل",
+        "Fresh Burger Chickens برجر دجاج طازج", "Grill Chicken Pc -Multi Taste ( قطع دجاج جرل صغير)",
+        "Grilled Chicken Fillet  فيليه مشوي", "Grilled Chicken Pc / قطع دجاج مشويه", "Grilled Quils (فري مشوي)",
+        "Half Boneless chicken -نصف دجاجة مسحب", "Happy Chicken Pc  ( قطع دجاح فرايد صغير عادي)",
+        "Happy Chicken Pc-Spicy  ( قطع دجاح فرايد صغير فلفل)", "Rooster Junior  ( فروج نايف)",
+        "Royal Grilled Chicken (دجاج شواية ملكي)", "Sish Tawouk  ( شيش طاووق)"
+    ]);
+
+    // إنشاء أيام 1 و 2 و 3 فقط مع حقلين لكل يوم
+    const daysContainer = document.getElementById('daysUploadContainer');
+    const dayLabels = ["الأول", "الثاني", "الثالث"];
+    for (let i = 1; i <= 3; i++) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'day-group';
+        groupDiv.innerHTML = `
+            <h3><i class="far fa-calendar-alt"></i> اليوم ${dayLabels[i-1]}</h3>
+            <div class="file-field">
+                <label><i class="fas fa-upload"></i> الملف الرئيسي - اليوم ${dayLabels[i-1]}</label>
+                <input type="file" accept=".xlsx, .xls, .csv" id="fileDay${i}_main" />
+            </div>
+            <div class="file-field">
+                <label><i class="fas fa-clock"></i> اليوم ${dayLabels[i-1]} لمطاعم 24 ساعة</label>
+                <input type="file" accept=".xlsx, .xls, .csv" id="fileDay${i}_24h" />
+            </div>
+        `;
+        daysContainer.appendChild(groupDiv);
     }
 
-    // تبديل حالة عنصر فردي
-    function toggleItemSelection(idx, isChecked) {
-        if (isChecked) {
-            selectedIndices.add(idx);
-        } else {
-            selectedIndices.delete(idx);
-        }
-        updateSelectionSummary();
-        // تحديث عرض الصف (ليست ضرورية لكن نعيد رسم خفيف) لتغيير الـ checkbox
-        renderTableBody(); 
-    }
-
-    // رسم الجدول مع أعمدة checkbox
-    function renderTableBody() {
-        if (!aggregatedData.length) {
-            tableBody.innerHTML = `<tr><td colspan="5" class="no-data-msg">⚠️ لا توجد بيانات معروضة. يرجى رفع ملف Excel صالح.</td></tr>`;
-            if(selectAllCheckbox) selectAllCheckbox.disabled = true;
-            return;
-        }
-        let html = '';
-        aggregatedData.forEach((item, idx) => {
-            const isChecked = selectedIndices.has(idx);
-            const displayQty = Number.isInteger(item.totalQty) ? item.totalQty : item.totalQty.toFixed(2);
-            html += `<tr>
-                        <td style="text-align:center;">
-                            <input type="checkbox" class="item-checkbox" data-idx="${idx}" ${isChecked ? 'checked' : ''}>
-                        </td>
-                        <td>${idx+1}</td>
-                        <td style="text-align:right; font-weight:500;">${escapeHtml(item.rmName)}</td>
-                        <td>${displayQty}</td>
-                        <td>${escapeHtml(item.uomName)}</td>
-                     </tr>`;
+    // دالة تحليل ملف واحد واستخراج الخريطة (product -> aggregated tx)
+    async function parseSingleFileToMap(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                if (!rows || rows.length < 3) reject("الملف فارغ أو غير صالح");
+                
+                function findHeaderRow(rows) {
+                    const keywords = ["RMName", "Start Qty", "Recd. Qty", "Act. Usage"];
+                    let bestRow = -1, bestScore = 0;
+                    for (let i = 0; i < Math.min(rows.length, 80); i++) {
+                        const row = rows[i];
+                        if (!row) continue;
+                        let score = 0;
+                        for (let col = 0; col < row.length; col++) {
+                            const cell = (row[col] || "").toString().trim();
+                            if (keywords.some(kw => cell.includes(kw))) score++;
+                        }
+                        if (score > bestScore && score >= 2) { bestScore = score; bestRow = i; }
+                    }
+                    if (bestRow !== -1) return bestRow;
+                    for (let i = 0; i < rows.length; i++) {
+                        if (rows[i] && rows[i].some(c => (c || "").toString().includes("RMName"))) return i;
+                    }
+                    return -1;
+                }
+                
+                const headerIdx = findHeaderRow(rows);
+                if (headerIdx === -1) reject("لم يتم العثور على رأس الجدول");
+                const headers = rows[headerIdx].map(c => (c || "").toString().trim());
+                const idx = {
+                    rmName: headers.findIndex(h => h.includes("RMName")),
+                    startQty: headers.findIndex(h => h.includes("Start Qty")),
+                    recdQty: headers.findIndex(h => h.includes("Recd. Qty") || h.includes("Recd Qty")),
+                    actUsage: headers.findIndex(h => h.includes("Act. Usage") || h.includes("Act Usage")),
+                    tranIn: headers.findIndex(h => h.includes("Tran. In Qty") || h.includes("Tran In")),
+                    tranOut: headers.findIndex(h => h.includes("Tran. Out Qty") || h.includes("Tran Out")),
+                    wasteQty: headers.findIndex(h => h.includes("Wast. Qty")),
+                    endQty: headers.findIndex(h => h.includes("End Qty")),
+                    returnQty: headers.findIndex(h => h.includes("Return Qty")),
+                    uomName: headers.findIndex(h => h.includes("UOM Name"))
+                };
+                if (idx.rmName === -1 || idx.startQty === -1) reject("الأعمدة الأساسية مفقودة");
+                
+                const productMap = new Map(); // product -> object
+                for (let r = headerIdx+1; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row || row.length < 2) continue;
+                    const product = (row[idx.rmName] || "").toString().trim();
+                    if (!product || !TARGET_PRODUCTS.has(product)) continue;
+                    const start = safeParseNumber(row[idx.startQty]);
+                    const recd = idx.recdQty !== -1 ? safeParseNumber(row[idx.recdQty]) : 0;
+                    const actUsage = idx.actUsage !== -1 ? safeParseNumber(row[idx.actUsage]) : 0;
+                    const tranIn = idx.tranIn !== -1 ? safeParseNumber(row[idx.tranIn]) : 0;
+                    const tranOut = idx.tranOut !== -1 ? safeParseNumber(row[idx.tranOut]) : 0;
+                    const waste = idx.wasteQty !== -1 ? safeParseNumber(row[idx.wasteQty]) : 0;
+                    const endQty = idx.endQty !== -1 ? safeParseNumber(row[idx.endQty]) : 0;
+                    const returnQty = idx.returnQty !== -1 ? safeParseNumber(row[idx.returnQty]) : 0;
+                    const uom = (idx.uomName !== -1 && row[idx.uomName]) ? row[idx.uomName].toString().trim() : "وحدة";
+                    
+                    if (!productMap.has(product)) {
+                        productMap.set(product, { startQty:0, recdQty:0, actUsage:0, tranIn:0, tranOut:0, wasteQty:0, endQty:0, returnQty:0, uom });
+                    }
+                    const existing = productMap.get(product);
+                    existing.startQty += start;
+                    existing.recdQty += recd;
+                    existing.actUsage += actUsage;
+                    existing.tranIn += tranIn;
+                    existing.tranOut += tranOut;
+                    existing.wasteQty += waste;
+                    existing.returnQty += returnQty;
+                    if (endQty !== 0) existing.endQty = endQty; // آخر قيمة غير صفرية تعتبر الفعلي
+                    if (uom) existing.uom = uom;
+                }
+                resolve(productMap);
+            };
+            reader.onerror = err => reject(err);
+            reader.readAsArrayBuffer(file);
         });
-        // صف إجمالي
-        html += `<tr class="total-row">
-                    <td colspan="2" style="text-align:left;"><strong>📊 عدد الأصناف الفريدة</strong></td>
-                    <td colspan="3"><strong>${aggregatedData.length}</strong></td>
-                 </tr>`;
-        tableBody.innerHTML = html;
+    }
+
+    // دمج عدة ملفات لنفس اليوم
+    async function mergeFilesPerDay(filesArray) {
+        if (!filesArray.length) return new Map();
+        let mergedMap = new Map();
+        for (const file of filesArray) {
+            try {
+                const fileMap = await parseSingleFileToMap(file);
+                for (let [prod, data] of fileMap.entries()) {
+                    if (!mergedMap.has(prod)) {
+                        mergedMap.set(prod, { ...data });
+                    } else {
+                        const target = mergedMap.get(prod);
+                        target.startQty += data.startQty;
+                        target.recdQty += data.recdQty;
+                        target.actUsage += data.actUsage;
+                        target.tranIn += data.tranIn;
+                        target.tranOut += data.tranOut;
+                        target.wasteQty += data.wasteQty;
+                        target.returnQty += data.returnQty;
+                        if (data.endQty !== 0) target.endQty = data.endQty;
+                        if (data.uom) target.uom = data.uom;
+                    }
+                }
+            } catch(err) { throw err; }
+        }
+        return mergedMap;
+    }
+
+    class Lot { constructor(qty, expiryDay) { this.quantity = qty; this.expiryDay = expiryDay; } }
+
+    async function runAnalysis(filesPerDay) {
+        const daysData = [];
+        for (let i = 0; i < filesPerDay.length; i++) {
+            const dayIdx = i+1;
+            if (!filesPerDay[i].files || filesPerDay[i].files.length === 0) continue;
+            try {
+                const mergedTx = await mergeFilesPerDay(filesPerDay[i].files);
+                daysData.push({ dayIdx: dayIdx, transactions: mergedTx });
+            } catch(err) { alert(`خطأ بدمج ملفات اليوم ${dayIdx}: ${err.message}`); return null; }
+        }
+        if (daysData.length === 0) { alert("لا توجد ملفات صالحة (يجب رفع ملف رئيسي أو ملف 24 ساعة على الأقل ليوم واحد)"); return null; }
         
-        // إعادة ربط أحداث الـ checkboxes
-        document.querySelectorAll('.item-checkbox').forEach(chk => {
-            chk.addEventListener('change', (e) => {
-                const idx = parseInt(e.target.getAttribute('data-idx'));
-                if (!isNaN(idx)) {
-                    toggleItemSelection(idx, e.target.checked);
-                }
-            });
-        });
-        selectAllCheckbox.disabled = false;
-        // ربط حدث "تحديد الكل"
-        if (selectAllCheckbox) {
-            // إزالة المستمع القديم لمنع التكرار
-            const newSelectAll = selectAllCheckbox.cloneNode(true);
-            selectAllCheckbox.parentNode.replaceChild(newSelectAll, selectAllCheckbox);
-            window.selectAllCheckbox = newSelectAll;
-            newSelectAll.addEventListener('change', (e) => {
-                toggleSelectAll(e.target.checked);
-            });
-        }
-    }
-
-    // عرض فارغ
-    function renderEmptyTable() {
-        tableBody.innerHTML = `<tr><td colspan="5" class="no-data-msg">⚠️ لا توجد بيانات معروضة. يرجى رفع ملف Excel صالح.</td></tr>`;
-        if(selectAllCheckbox) selectAllCheckbox.disabled = true;
-        selectionSummaryDiv.innerHTML = '';
-    }
-
-    function escapeHtml(str) {
-        if (!str) return "";
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // ------------------- معالجة ملف Excel -------------------
-    async function processExcelFile(file) {
-        if (!file) return;
-        fileStatusSpan.innerText = '⏳ جاري القراءة والتجميع...';
-        try {
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array', cellDates: false, defval: "" });
-            let targetSheet = null;
-            if (workbook.SheetNames.includes("TheoreticalUsageVerificationDet")) {
-                targetSheet = workbook.Sheets["TheoreticalUsageVerificationDet"];
-            } else {
-                for (let name of workbook.SheetNames) {
-                    let sheet = workbook.Sheets[name];
-                    if (sheet && sheet['!ref']) { targetSheet = sheet; break; }
-                }
-            }
-            if (!targetSheet) throw new Error("لا توجد أوراق صالحة");
-            const rows = XLSX.utils.sheet_to_json(targetSheet, { header: 1, defval: "" });
-            if (!rows || rows.length < 2) throw new Error("الملف لا يحتوي على بيانات");
-
-            let headerRowIndex = -1;
-            let colRMName = -1, colTotalQty = -1, colUom = -1;
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row) continue;
-                for (let c = 0; c < row.length; c++) {
-                    let val = (row[c] && row[c].toString().trim()) || "";
-                    if (val === "RMName" || val.includes("RMName")) colRMName = c;
-                    if (val === "Total Usage Qty" || val.includes("Total Usage Qty")) colTotalQty = c;
-                    if (val === "Uom Name" || val.includes("Uom Name")) colUom = c;
-                }
-                if (colRMName !== -1 && colTotalQty !== -1) {
-                    headerRowIndex = i;
-                    break;
-                }
-            }
-            if (colRMName === -1 || colTotalQty === -1) {
-                throw new Error("لم يتم العثور على عمودي 'RMName' و 'Total Usage Qty'");
-            }
-
-            const aggregationMap = new Map();
-            for (let i = headerRowIndex + 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-                let rmNameRaw = (row[colRMName] !== undefined && row[colRMName] !== null) ? row[colRMName].toString().trim() : "";
-                if (rmNameRaw === "") continue;
-                let qtyRaw = row[colTotalQty];
-                let qtyNumber = 0;
-                if (typeof qtyRaw === 'number') qtyNumber = qtyRaw;
-                else if (typeof qtyRaw === 'string') {
-                    let cleaned = qtyRaw.replace(/[^0-9.\-]/g, '');
-                    qtyNumber = parseFloat(cleaned);
-                    if (isNaN(qtyNumber)) qtyNumber = 0;
-                }
-                let uomValue = "";
-                if (colUom !== -1 && row[colUom]) uomValue = row[colUom].toString().trim();
-                if (aggregationMap.has(rmNameRaw)) {
-                    let existing = aggregationMap.get(rmNameRaw);
-                    existing.totalQty += qtyNumber;
-                    if (existing.uom === "" && uomValue !== "") existing.uom = uomValue;
-                } else {
-                    aggregationMap.set(rmNameRaw, { totalQty: qtyNumber, uom: uomValue || "وحدة" });
-                }
-            }
-            if (aggregationMap.size === 0) throw new Error("لا توجد بيانات تجميع صالحة");
-            aggregatedData = Array.from(aggregationMap.entries()).map(([name, data]) => ({
-                rmName: name,
-                totalQty: data.totalQty,
-                uomName: data.uom
-            })).sort((a,b) => a.rmName.localeCompare(b.rmName));
+        const allProducts = new Set();
+        daysData.forEach(d => { for (let p of d.transactions.keys()) allProducts.add(p); });
+        if (allProducts.size === 0) { alert("لم يتم العثور على أصناف من القائمة"); return null; }
+        
+        const productState = new Map(); // product -> { lots: [], uom: string }
+        for (let p of allProducts) productState.set(p, { lots: [], uom: "" });
+        const expiryAlerts = [];
+        const diffRecords = [];
+        
+        for (let dayIdx = 0; dayIdx < daysData.length; dayIdx++) {
+            const currentDay = daysData[dayIdx].dayIdx;
+            const dayTx = daysData[dayIdx].transactions;
             
-            rawDataValid = true;
-            selectedIndices.clear();
-            // بشكل افتراضي نحدد الكل لتجربة سهلة (اختياري لكن الأفضل لتسهيل التصدير)
-            for (let i = 0; i < aggregatedData.length; i++) selectedIndices.add(i);
+            for (let [prod, tx] of dayTx.entries()) {
+                if (productState.has(prod) && tx.uom) productState.get(prod).uom = tx.uom;
+            }
             
-            fileStatusSpan.innerHTML = `✅ تم التحميل | عدد الأصناف: ${aggregatedData.length}`;
-            renderTableBody();
-            updateSelectionSummary();
-            exportExcelBtn.disabled = false;
-            if (selectedIndices.size > 0) exportPdfBtn.disabled = false;
-            else exportPdfBtn.disabled = true;
-        } catch (err) {
-            console.error(err);
-            fileStatusSpan.innerHTML = `❌ خطأ: ${err.message}`;
-            aggregatedData = [];
-            rawDataValid = false;
-            selectedIndices.clear();
-            renderEmptyTable();
-            exportExcelBtn.disabled = true;
-            exportPdfBtn.disabled = true;
-            selectionSummaryDiv.innerHTML = '';
-        }
-    }
-
-    // ------------------- تصدير Excel (جميع الأصناف) -------------------
-    function exportToExcel() {
-        if (!rawDataValid || aggregatedData.length === 0) {
-            alert("لا توجد بيانات مجمعة للتصدير");
-            return;
-        }
-        const sheetData = [["اسم الصنف (RMName)", "إجمالي الكمية المستهلكة", "وحدة القياس (UoM)"]];
-        aggregatedData.forEach(item => {
-            sheetData.push([item.rmName, item.totalQty, item.uomName]);
-        });
-        sheetData.push(["", "", ""]);
-        sheetData.push(["إجمالي عدد الأصناف الفريدة", aggregatedData.length, ""]);
-        const newSheet = XLSX.utils.aoa_to_sheet(sheetData);
-        newSheet['!cols'] = [{wch:40}, {wch:20}, {wch:20}];
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, newSheet, "تجميع_الأصناف");
-        XLSX.writeFile(workbook, `تقرير_نايف_الاصناف_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
-    }
-
-    // ------------------- تصدير PDF للأصناف المحددة فقط -------------------
-    async function exportToPDF() {
-        if (!rawDataValid || aggregatedData.length === 0) {
-            alert("لا توجد بيانات لإنشاء PDF");
-            return;
-        }
-        if (selectedIndices.size === 0) {
-            alert("الرجاء تحديد صنف واحد على الأقل لتصدير PDF.");
-            return;
-        }
-        // تجهيز البيانات المحددة
-        const selectedItems = [];
-        for (let idx of selectedIndices) {
-            if (aggregatedData[idx]) selectedItems.push(aggregatedData[idx]);
-        }
-        if (selectedItems.length === 0) {
-            alert("لم يتم اختيار أي صنف صالح.");
-            return;
-        }
-
-        exportPdfBtn.disabled = true;
-        const originalText = exportPdfBtn.innerText;
-        exportPdfBtn.innerText = "⏳ جاري إنشاء PDF...";
-
-        try {
-            // إنشاء حاوية PDF مؤقتة في DOM لالتقاط الصورة بشكل صحيح
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.width = '794px';
-            pdfContainer.style.background = '#ffffff';
-            pdfContainer.style.padding = '20px 30px';
-            pdfContainer.style.fontFamily = 'Cairo, "Segoe UI", Tahoma, Arial';
-            pdfContainer.style.direction = 'rtl';
-            pdfContainer.style.position = 'absolute';
-            pdfContainer.style.top = '-9999px';
-            pdfContainer.style.left = '0';
-            pdfContainer.style.zIndex = '-1';
-            document.body.appendChild(pdfContainer);
+            for (let [prod, state] of productState.entries()) {
+                const tx = dayTx.get(prod);
+                if (!tx) continue;
+                
+                if (currentDay === 1 && state.lots.length === 0 && tx.startQty > 0) {
+                    state.lots.push(new Lot(tx.startQty, currentDay + 1));
+                }
+                
+                let totalIn = tx.recdQty + tx.tranIn + tx.returnQty;
+                if (totalIn > 0) {
+                    state.lots.push(new Lot(totalIn, currentDay + 2));
+                }
+                
+                let totalOut = tx.actUsage + tx.tranOut + tx.wasteQty;
+                let toConsume = totalOut;
+                let newLots = [];
+                for (let lot of state.lots) {
+                    if (toConsume <= 0) { newLots.push(lot); continue; }
+                    let take = Math.min(lot.quantity, toConsume);
+                    lot.quantity -= take;
+                    toConsume -= take;
+                    if (lot.quantity > 0) newLots.push(lot);
+                }
+                state.lots = newLots;
+                
+                let remainingLots = [];
+                for (let lot of state.lots) {
+                    if (lot.expiryDay < currentDay) {
+                        // الجملة المطلوبة بدون ذكر "انتهت صلاحيتها"
+                        expiryAlerts.push(`⚠️ [اليوم ${currentDay}] صنف "${prod}" : كمية (${lot.quantity.toFixed(3)} ${state.uom}) - مطلوب المتابعة للكمية - لم يتم استخدامها/تحويلها/إتلافها.`);
+                    } else {
+                        remainingLots.push(lot);
+                    }
+                }
+                state.lots = remainingLots;
+                
+                const calculatedEnd = state.lots.reduce((s, l) => s + l.quantity, 0);
+                if (Math.abs(calculatedEnd - tx.endQty) > 0.05) {
+                    diffRecords.push({
+                        day: currentDay,
+                        product: prod,
+                        calculated: calculatedEnd,
+                        actual: tx.endQty,
+                        diff: calculatedEnd - tx.endQty
+                    });
+                }
+            }
             
-            // رأس الشركة (نسخة PDF)
+            for (let [prod, state] of productState.entries()) {
+                if (dayTx.has(prod)) continue;
+                let updated = [];
+                for (let lot of state.lots) {
+                    if (lot.expiryDay < currentDay) {
+                        expiryAlerts.push(`⚠️ [اليوم ${currentDay}] صنف "${prod}" : رصيد (${lot.quantity.toFixed(3)} ${state.uom}) - مطلوب المتابعة للكمية - لم يتم استخدامها/تحويلها/إتلافها.`);
+                    } else {
+                        updated.push(lot);
+                    }
+                }
+                state.lots = updated;
+            }
+        }
+        
+        const lastDay = daysData.length > 0 ? daysData[daysData.length-1].dayIdx : 0;
+        for (let [prod, state] of productState.entries()) {
+            for (let lot of state.lots) {
+                if (lot.expiryDay <= lastDay) {
+                    expiryAlerts.push(`⚠️ بعد انتهاء الفترة: صنف "${prod}" لديه رصيد (${lot.quantity.toFixed(3)} ${state.uom}) - مطلوب المتابعة للكمية - لم يتم استخدامها/تحويلها/إتلافها.`);
+                }
+            }
+        }
+        return { expiryAlerts, diffRecords };
+    }
+    
+    function renderResults(result) {
+        if (!result) return;
+        const { expiryAlerts, diffRecords } = result;
+        const expiryList = document.getElementById('expiryAlertList');
+        if (expiryAlerts.length === 0) {
+            expiryList.innerHTML = '<li style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-check-circle"></i> لا توجد كميات مطلوب متابعتها. جميع المنتجات تم استخدامها أو تحويلها أو إتلافها.</li>';
+        } else {
+            expiryList.innerHTML = expiryAlerts.map(alert => `<li><i class="fas fa-exclamation-triangle"></i> ${alert}</li>`).join('');
+        }
+        
+        const diffTbody = document.getElementById('diffTbody');
+        if (diffRecords.length === 0) {
+            diffTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">✔️ جميع الأرصدة المحسوبة متطابقة مع End Qty</td></tr>';
+        } else {
+            diffTbody.innerHTML = diffRecords.map(rec => `
+                <tr>
+                    <td>اليوم ${rec.day}</td>
+                    <td>${rec.product}</td>
+                    <td>${rec.calculated.toFixed(3)}</td>
+                    <td>${rec.actual.toFixed(3)}</td>
+                    <td style="color:${rec.diff > 0 ? '#d32f2f' : '#2e7d32'}">${rec.diff > 0 ? '+' : ''}${rec.diff.toFixed(3)}</td>
+                </tr>
+            `).join('');
+        }
+        window.currentResult = result;
+    }
+    
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
+        const filesPerDay = [];
+        for (let i = 1; i <= 3; i++) {
+            const mainInput = document.getElementById(`fileDay${i}_main`);
+            const input24 = document.getElementById(`fileDay${i}_24h`);
+            const files = [];
+            if (mainInput.files.length) files.push(mainInput.files[0]);
+            if (input24.files.length) files.push(input24.files[0]);
+            filesPerDay.push({ dayIndex: i, files: files });
+        }
+        const hasAny = filesPerDay.some(f => f.files.length > 0);
+        if (!hasAny) { alert("يرجى رفع ملف رئيسي أو ملف 24 ساعة ليوم واحد على الأقل"); return; }
+        const result = await runAnalysis(filesPerDay);
+        if (result) renderResults(result);
+    });
+    
+    // وظائف تصدير PDF بالطريقة المتقدمة مع الشعار
+    async function exportToPDFAdvanced(title, orientation, dataRows, isExpiryReport) {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '-9999px';
+        container.style.width = orientation === 'landscape' ? '1123px' : '794px';
+        container.style.background = '#ffffff';
+        container.style.direction = 'rtl';
+        container.style.padding = '20px';
+        container.style.boxSizing = 'border-box';
+        document.body.appendChild(container);
+        
+        const logoImg = document.getElementById('companyLogoImg');
+        let logoSrc = '';
+        if (logoImg && logoImg.src) logoSrc = logoImg.src;
+        
+        const safeHeight = 900;
+        let currentPageDiv;
+        function createPage() {
+            const page = document.createElement('div');
+            page.style.width = '100%';
+            page.style.padding = '20px';
+            page.style.background = '#ffffff';
+            page.style.boxSizing = 'border-box';
+            container.appendChild(page);
+            return page;
+        }
+        
+        function addHeader(pageDiv) {
             const headerDiv = document.createElement('div');
             headerDiv.style.display = 'flex';
             headerDiv.style.alignItems = 'center';
-            headerDiv.style.justifyContent = 'space-between';
-            headerDiv.style.borderBottom = '3px solid #ffc107';
-            headerDiv.style.paddingBottom = '15px';
-            headerDiv.style.marginBottom = '25px';
-            headerDiv.style.background = '#c0392b';
-            headerDiv.style.color = 'white';
-            headerDiv.style.padding = '15px 20px';
-            headerDiv.style.borderRadius = '16px 16px 0 0';
-            
-            const logoImg = document.createElement('img');
-            logoImg.src = 'https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg';
-            logoImg.style.height = '55px';
-            logoImg.style.width = 'auto';
-            logoImg.style.objectFit = 'contain';
-            logoImg.style.background = '#fff';
-            logoImg.style.borderRadius = '10px';
-            logoImg.style.padding = '4px';
-            logoImg.onerror = () => { logoImg.style.display = 'none'; };
-            
-            const titleSpan = document.createElement('div');
-            titleSpan.style.fontSize = '1.6rem';
-            titleSpan.style.fontWeight = 'bold';
-            titleSpan.style.color = 'white';
-            titleSpan.innerText = 'شركة نايف للأغذية';
-            
-            const leftDate = document.createElement('div');
-            leftDate.style.fontSize = '0.7rem';
-            leftDate.style.color = '#ffefd0';
-            leftDate.innerHTML = `تقرير تجميع الكميات<br>التاريخ: ${new Date().toLocaleDateString('ar-KW')}`;
-            
-            const logoTitleDiv = document.createElement('div');
-            logoTitleDiv.style.display = 'flex';
-            logoTitleDiv.style.alignItems = 'center';
-            logoTitleDiv.style.gap = '15px';
-            logoTitleDiv.appendChild(logoImg);
-            logoTitleDiv.appendChild(titleSpan);
-            headerDiv.appendChild(logoTitleDiv);
-            headerDiv.appendChild(leftDate);
-            pdfContainer.appendChild(headerDiv);
-            
-            // جدول PDF للأصناف المحددة فقط
-            const tableElem = document.createElement('table');
-            tableElem.style.width = '100%';
-            tableElem.style.borderCollapse = 'collapse';
-            tableElem.style.fontSize = '12px';
-            tableElem.style.marginTop = '20px';
-            tableElem.style.border = '1px solid #ccc';
-            
+            headerDiv.style.gap = '15px';
+            headerDiv.style.marginBottom = '20px';
+            headerDiv.style.borderBottom = '2px solid #d32f2f';
+            headerDiv.style.paddingBottom = '10px';
+            if (logoSrc) {
+                const img = document.createElement('img');
+                img.src = logoSrc;
+                img.style.height = '50px';
+                img.style.width = 'auto';
+                headerDiv.appendChild(img);
+            }
+            const titleDiv = document.createElement('div');
+            titleDiv.innerHTML = `<h2 style="color:#b32b2b; margin:0;">شركة نايف للأغذية</h2><h3 style="margin:0;">${title}</h3>`;
+            headerDiv.appendChild(titleDiv);
+            pageDiv.appendChild(headerDiv);
+        }
+        
+        currentPageDiv = createPage();
+        addHeader(currentPageDiv);
+        
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '15px';
+        
+        if (isExpiryReport) {
             const thead = document.createElement('thead');
             const headerRow = document.createElement('tr');
-            ['#', 'اسم الصنف (RMName)', 'إجمالي الكمية', 'وحدة القياس'].forEach(text => {
-                const th = document.createElement('th');
-                th.innerText = text;
-                th.style.backgroundColor = '#2c3e50';
-                th.style.color = 'white';
-                th.style.padding = '8px';
-                th.style.border = '1px solid #aaa';
-                th.style.textAlign = 'center';
-                headerRow.appendChild(th);
-            });
+            headerRow.style.background = '#d32f2f';
+            headerRow.style.color = 'white';
+            const th = document.createElement('th');
+            th.textContent = 'تفاصيل الكميات المطلوب متابعتها (لم يتم استخدامها/تحويلها/إتلافها)';
+            th.style.padding = '10px';
+            th.style.textAlign = 'center';
+            headerRow.appendChild(th);
             thead.appendChild(headerRow);
-            tableElem.appendChild(thead);
-            
+            table.appendChild(thead);
             const tbody = document.createElement('tbody');
-            selectedItems.forEach((item, idx) => {
+            for (let alert of dataRows) {
                 const tr = document.createElement('tr');
-                const tdNum = document.createElement('td'); tdNum.innerText = (idx+1).toString(); tdNum.style.border = '1px solid #ddd'; tdNum.style.padding = '6px'; tdNum.style.textAlign = 'center';
-                const tdName = document.createElement('td'); tdName.innerText = item.rmName; tdName.style.border = '1px solid #ddd'; tdName.style.padding = '6px'; tdName.style.textAlign = 'right';
-                const tdQty = document.createElement('td'); tdQty.innerText = Number.isInteger(item.totalQty) ? item.totalQty : item.totalQty.toFixed(2); tdQty.style.border = '1px solid #ddd'; tdQty.style.padding = '6px'; tdQty.style.textAlign = 'center';
-                const tdUom = document.createElement('td'); tdUom.innerText = item.uomName; tdUom.style.border = '1px solid #ddd'; tdUom.style.padding = '6px'; tdUom.style.textAlign = 'center';
-                tr.appendChild(tdNum); tr.appendChild(tdName); tr.appendChild(tdQty); tr.appendChild(tdUom);
+                const td = document.createElement('td');
+                td.style.border = '1px solid #ddd';
+                td.style.padding = '10px';
+                td.style.background = '#fff5e8';
+                td.textContent = alert;
+                tr.appendChild(td);
                 tbody.appendChild(tr);
+                table.appendChild(tbody);
+                if (currentPageDiv.offsetHeight > safeHeight) {
+                    tbody.removeChild(tr);
+                    currentPageDiv = createPage();
+                    addHeader(currentPageDiv);
+                    const newTable = table.cloneNode(true);
+                    currentPageDiv.appendChild(newTable);
+                    const newTbody = newTable.querySelector('tbody');
+                    if (newTbody) newTbody.appendChild(tr);
+                    else { const newBody = newTable.appendChild(document.createElement('tbody')); newBody.appendChild(tr); }
+                }
+            }
+            if (!table.parentNode) currentPageDiv.appendChild(table);
+        } else {
+            const thead = document.createElement('thead');
+            const headers = ['اليوم', 'الصنف', 'الرصيد المحسوب', 'الرصيد الفعلي', 'الفرق'];
+            const trHead = document.createElement('tr');
+            trHead.style.background = '#2c3e66';
+            trHead.style.color = 'white';
+            headers.forEach(h => {
+                const th = document.createElement('th');
+                th.textContent = h;
+                th.style.padding = '8px';
+                th.style.border = '1px solid #ccc';
+                trHead.appendChild(th);
             });
-            // صف إجمالي المحدد
-            const totalRow = document.createElement('tr');
-            const totalLabel = document.createElement('td'); totalLabel.colSpan = 2; totalLabel.innerText = 'عدد الأصناف المختارة'; totalLabel.style.fontWeight = 'bold'; totalLabel.style.backgroundColor = '#f1f9fe'; totalLabel.style.padding = '8px';
-            const totalVal = document.createElement('td'); totalVal.colSpan = 2; totalVal.innerText = selectedItems.length.toString(); totalVal.style.fontWeight = 'bold'; totalVal.style.backgroundColor = '#f1f9fe'; totalVal.style.padding = '8px';
-            totalRow.appendChild(totalLabel); totalRow.appendChild(totalVal);
-            tbody.appendChild(totalRow);
-            tableElem.appendChild(tbody);
-            pdfContainer.appendChild(tableElem);
-            
-            const footerNote = document.createElement('div');
-            footerNote.style.marginTop = '25px';
-            footerNote.style.fontSize = '9px';
-            footerNote.style.textAlign = 'center';
-            footerNote.style.color = '#7f8c8d';
-            footerNote.innerText = `تم إنشاء التقرير بواسطة شركة نايف للأغذية - الأصناف المحددة: ${selectedItems.length}`;
-            pdfContainer.appendChild(footerNote);
-            
-            // انتظار تحميل الصور (بسيط)
-            await new Promise(resolve => setTimeout(resolve, 200));
-            const canvas = await html2canvas(pdfContainer, { scale: 2, backgroundColor: '#ffffff', logging: false });
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'pt', 'a4');
+            thead.appendChild(trHead);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            for (let rec of dataRows) {
+                const tr = document.createElement('tr');
+                const cells = [`اليوم ${rec.day}`, rec.product, rec.calculated.toFixed(3), rec.actual.toFixed(3), (rec.diff>0?'+':'')+rec.diff.toFixed(3)];
+                cells.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    td.style.padding = '8px';
+                    td.style.border = '1px solid #ddd';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+                table.appendChild(tbody);
+                if (currentPageDiv.offsetHeight > safeHeight) {
+                    tbody.removeChild(tr);
+                    currentPageDiv = createPage();
+                    addHeader(currentPageDiv);
+                    const newTable = table.cloneNode(true);
+                    currentPageDiv.appendChild(newTable);
+                    const newTbody = newTable.querySelector('tbody');
+                    if (newTbody) newTbody.appendChild(tr);
+                    else { const newBody = newTable.appendChild(document.createElement('tbody')); newBody.appendChild(tr); }
+                }
+            }
+            if (!table.parentNode) currentPageDiv.appendChild(table);
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF(orientation === 'landscape' ? 'l' : 'p', 'pt', 'a4');
+        const pages = Array.from(container.children);
+        for (let i = 0; i < pages.length; i++) {
+            const canvas = await html2canvas(pages[i], { scale: 2, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
             const imgWidth = pdf.internal.pageSize.getWidth();
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            if (i > 0) pdf.addPage();
             pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`تقرير_نايف_المحدد_${new Date().toISOString().slice(0,19)}.pdf`);
-            
-            document.body.removeChild(pdfContainer);
-        } catch (err) {
-            console.error("PDF ERROR:", err);
-            alert("حدث خطأ أثناء إنشاء PDF: " + (err.message || "غير معروف، تأكد من الاتصال بالإنترنت لتحميل المكتبات"));
-        } finally {
-            exportPdfBtn.innerText = originalText;
-            if (rawDataValid && selectedIndices.size > 0) exportPdfBtn.disabled = false;
-            else exportPdfBtn.disabled = true;
         }
+        pdf.save(isExpiryReport ? 'تقرير_الصلاحية_نايف.pdf' : 'تقرير_اختلاف_الرصيد_نايف.pdf');
+        document.body.removeChild(container);
     }
-
-    // ربط الأحداث
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) processExcelFile(e.target.files[0]);
-        else {
-            aggregatedData = [];
-            rawDataValid = false;
-            selectedIndices.clear();
-            renderEmptyTable();
-            exportExcelBtn.disabled = true;
-            exportPdfBtn.disabled = true;
-            fileStatusSpan.innerText = "لم يتم اختيار ملف";
-            selectionSummaryDiv.innerHTML = '';
-        }
-    });
-    exportExcelBtn.addEventListener('click', exportToExcel);
-    exportPdfBtn.addEventListener('click', exportToPDF);
     
-    // تهيئة أولية
-    renderEmptyTable();
-    exportExcelBtn.disabled = true;
-    exportPdfBtn.disabled = true;
+    document.getElementById('exportExpiryPdfBtn').addEventListener('click', async () => {
+        if (!window.currentResult || window.currentResult.expiryAlerts.length === 0) {
+            alert("لا توجد بيانات مطلوب متابعتها لتصديرها");
+            return;
+        }
+        await exportToPDFAdvanced('تقرير الكميات المطلوب متابعتها (لم يتم استخدامها/تحويلها/إتلافها)', 'landscape', window.currentResult.expiryAlerts, true);
+    });
+    
+    document.getElementById('exportDiffPdfBtn').addEventListener('click', async () => {
+        if (!window.currentResult || window.currentResult.diffRecords.length === 0) {
+            alert("لا توجد اختلافات في الرصيد لتصديرها");
+            return;
+        }
+        await exportToPDFAdvanced('تقرير اختلافات الرصيد المحسوب عن الفعلي', 'portrait', window.currentResult.diffRecords, false);
+    });
+    
+    // تبديل التبويبات
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panes = { expiry: document.getElementById('expiryPane'), diff: document.getElementById('diffPane') };
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-tab');
+            tabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            Object.values(panes).forEach(p => p.classList.remove('active'));
+            if (target === 'expiry') panes.expiry.classList.add('active');
+            else panes.diff.classList.add('active');
+        });
+    });
 </script>
 </body>
 </html>
