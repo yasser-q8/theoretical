@@ -302,7 +302,7 @@
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr><td colspan="5" class="no-data-msg">📁 قم بتحميل ملف Excel لعرض التجميع</td></tr>
+                    <tr><td colspan="5" class="no-data-msg">📁 قم بتحميل ملف Excel لعرض التجميع</td><tr>
                 </tbody>
             </table>
         </div>
@@ -425,7 +425,6 @@
         selectAllCheckbox.disabled = false;
         // ربط حدث "تحديد الكل"
         if (selectAllCheckbox) {
-            // إزالة المستمع القديم لمنع التكرار
             const newSelectAll = selectAllCheckbox.cloneNode(true);
             selectAllCheckbox.parentNode.replaceChild(newSelectAll, selectAllCheckbox);
             window.selectAllCheckbox = newSelectAll;
@@ -525,7 +524,6 @@
             
             rawDataValid = true;
             selectedIndices.clear();
-            // بشكل افتراضي نحدد الكل لتجربة سهلة (اختياري لكن الأفضل لتسهيل التصدير)
             for (let i = 0; i < aggregatedData.length; i++) selectedIndices.add(i);
             
             fileStatusSpan.innerHTML = `✅ تم التحميل | عدد الأصناف: ${aggregatedData.length}`;
@@ -566,7 +564,7 @@
         XLSX.writeFile(workbook, `تقرير_نايف_الاصناف_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
     }
 
-    // ------------------- تصدير PDF للأصناف المحددة فقط -------------------
+    // ------------------- تصدير PDF متعدد الصفحات للأصناف المحددة -------------------
     async function exportToPDF() {
         if (!rawDataValid || aggregatedData.length === 0) {
             alert("لا توجد بيانات لإنشاء PDF");
@@ -588,131 +586,193 @@
 
         exportPdfBtn.disabled = true;
         const originalText = exportPdfBtn.innerText;
-        exportPdfBtn.innerText = "⏳ جاري إنشاء PDF...";
+        exportPdfBtn.innerText = "⏳ جاري إنشاء PDF متعدد الصفحات...";
 
         try {
-            // إنشاء حاوية PDF مؤقتة في DOM لالتقاط الصورة بشكل صحيح
-            const pdfContainer = document.createElement('div');
-            pdfContainer.style.width = '794px';
-            pdfContainer.style.background = '#ffffff';
-            pdfContainer.style.padding = '20px 30px';
-            pdfContainer.style.fontFamily = 'Cairo, "Segoe UI", Tahoma, Arial';
-            pdfContainer.style.direction = 'rtl';
-            pdfContainer.style.position = 'absolute';
-            pdfContainer.style.top = '-9999px';
-            pdfContainer.style.left = '0';
-            pdfContainer.style.zIndex = '-1';
-            document.body.appendChild(pdfContainer);
+            // إنشاء حاوية رئيسية مخفية
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.top = '-9999px';
+            container.style.left = '0';
+            container.style.width = '794px';
+            container.style.background = '#fff';
+            container.style.direction = 'rtl';
+            container.style.fontFamily = 'Cairo, "Segoe UI", Tahoma, Arial';
+            document.body.appendChild(container);
+
+            // دالة لإنشاء رأس الصفحة (شعار + عنوان + تاريخ)
+            function createPageHeader(pageNum, totalPages) {
+                const headerDiv = document.createElement('div');
+                headerDiv.style.display = 'flex';
+                headerDiv.style.alignItems = 'center';
+                headerDiv.style.justifyContent = 'space-between';
+                headerDiv.style.background = '#c0392b';
+                headerDiv.style.color = 'white';
+                headerDiv.style.padding = '12px 20px';
+                headerDiv.style.borderRadius = '12px 12px 0 0';
+                headerDiv.style.marginBottom = '15px';
+                
+                const rightDiv = document.createElement('div');
+                rightDiv.style.display = 'flex';
+                rightDiv.style.alignItems = 'center';
+                rightDiv.style.gap = '12px';
+                const logo = document.createElement('img');
+                logo.src = 'https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg';
+                logo.style.height = '45px';
+                logo.style.width = 'auto';
+                logo.style.borderRadius = '8px';
+                logo.style.background = '#fff';
+                logo.style.padding = '3px';
+                logo.onerror = () => { logo.style.display = 'none'; };
+                const titleSpan = document.createElement('span');
+                titleSpan.style.fontSize = '1.3rem';
+                titleSpan.style.fontWeight = 'bold';
+                titleSpan.innerText = 'شركة نايف للأغذية';
+                rightDiv.appendChild(logo);
+                rightDiv.appendChild(titleSpan);
+                
+                const leftDiv = document.createElement('div');
+                leftDiv.style.fontSize = '0.7rem';
+                leftDiv.style.textAlign = 'left';
+                leftDiv.innerHTML = `تقرير تجميع الكميات<br>${new Date().toLocaleDateString('ar-KW')}<br>صفحة ${pageNum} من ${totalPages}`;
+                
+                headerDiv.appendChild(rightDiv);
+                headerDiv.appendChild(leftDiv);
+                return headerDiv;
+            }
+
+            // دالة إنشاء جدول لمجموعة من العناصر
+            function createTableForItems(items, startSerial) {
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.borderCollapse = 'collapse';
+                table.style.fontSize = '11px';
+                table.style.border = '1px solid #ccc';
+                
+                // رأس الجدول
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                ['#', 'اسم الصنف (RMName)', 'إجمالي الكمية', 'وحدة القياس'].forEach(text => {
+                    const th = document.createElement('th');
+                    th.innerText = text;
+                    th.style.backgroundColor = '#2c3e50';
+                    th.style.color = 'white';
+                    th.style.padding = '8px 6px';
+                    th.style.border = '1px solid #aaa';
+                    th.style.textAlign = 'center';
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                items.forEach((item, idx) => {
+                    const tr = document.createElement('tr');
+                    const tdNum = document.createElement('td'); tdNum.innerText = (startSerial + idx).toString(); tdNum.style.border = '1px solid #ddd'; tdNum.style.padding = '6px'; tdNum.style.textAlign = 'center';
+                    const tdName = document.createElement('td'); tdName.innerText = item.rmName; tdName.style.border = '1px solid #ddd'; tdName.style.padding = '6px'; tdName.style.textAlign = 'right';
+                    const tdQty = document.createElement('td'); tdQty.innerText = Number.isInteger(item.totalQty) ? item.totalQty : item.totalQty.toFixed(2); tdQty.style.border = '1px solid #ddd'; tdQty.style.padding = '6px'; tdQty.style.textAlign = 'center';
+                    const tdUom = document.createElement('td'); tdUom.innerText = item.uomName; tdUom.style.border = '1px solid #ddd'; tdUom.style.padding = '6px'; tdUom.style.textAlign = 'center';
+                    tr.appendChild(tdNum); tr.appendChild(tdName); tr.appendChild(tdQty); tr.appendChild(tdUom);
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                return table;
+            }
+
+            // دالة إنشاء تذييل بسيط (عدد العناصر في هذه الصفحة)
+            function createFooter(itemCount, totalSelected) {
+                const footer = document.createElement('div');
+                footer.style.marginTop = '15px';
+                footer.style.fontSize = '9px';
+                footer.style.textAlign = 'center';
+                footer.style.color = '#555';
+                footer.style.borderTop = '1px solid #eee';
+                footer.style.paddingTop = '8px';
+                footer.innerText = `عدد الأصناف في هذه الصفحة: ${itemCount} | إجمالي الأصناف المختارة: ${totalSelected}`;
+                return footer;
+            }
+
+            // إعدادات الصفحة: الارتفاع المتاح للصفحة (بالـ px) بعد احتساب الهوامش
+            const PAGE_HEIGHT_LIMIT = 1200; // أقصى ارتفاع للمحتوى داخل الصفحة قبل القطع
+            let currentPageDiv = null;
+            let currentPageItems = [];
+            let currentHeight = 0;
+            let pagesData = []; // مصفوفة لتخزين { items: [], startSerial: number }
+            let serialCounter = 1;
             
-            // رأس الشركة (نسخة PDF)
-            const headerDiv = document.createElement('div');
-            headerDiv.style.display = 'flex';
-            headerDiv.style.alignItems = 'center';
-            headerDiv.style.justifyContent = 'space-between';
-            headerDiv.style.borderBottom = '3px solid #ffc107';
-            headerDiv.style.paddingBottom = '15px';
-            headerDiv.style.marginBottom = '25px';
-            headerDiv.style.background = '#c0392b';
-            headerDiv.style.color = 'white';
-            headerDiv.style.padding = '15px 20px';
-            headerDiv.style.borderRadius = '16px 16px 0 0';
+            // نقوم بتوزيع العناصر على صفحات بناءً على الارتفاع التقريبي لكل صف
+            // نحتاج إلى حساب ارتفاع الصف الواحد تقريباً (حوالي 35px) + هامش، مع الرأس والتذييل.
+            const ROW_HEIGHT_EST = 38; // بكسل تقريبي لارتفاع صف الجدول
+            const HEADER_HEIGHT = 110;  // ارتفاع رأس الصفحة + الهامش
+            const FOOTER_HEIGHT = 40;   // ارتفاع التذييل
+            const TABLE_HEADER_HEIGHT = 35; // ارتفاع رأس الجدول
             
-            const logoImg = document.createElement('img');
-            logoImg.src = 'https://i.postimg.cc/NM2zJWZD/NAIF-LOGO.jpg';
-            logoImg.style.height = '55px';
-            logoImg.style.width = 'auto';
-            logoImg.style.objectFit = 'contain';
-            logoImg.style.background = '#fff';
-            logoImg.style.borderRadius = '10px';
-            logoImg.style.padding = '4px';
-            logoImg.onerror = () => { logoImg.style.display = 'none'; };
+            // نحاكي التوزيع:
+            let tempItems = [...selectedItems];
+            let pageIndex = 0;
+            let startIdx = 1;
+            let itemPointer = 0;
+            while (itemPointer < tempItems.length) {
+                let rowsForPage = 0;
+                let usedHeight = HEADER_HEIGHT + TABLE_HEADER_HEIGHT + FOOTER_HEIGHT + 20; // مسافة إضافية
+                let maxRows = Math.floor((PAGE_HEIGHT_LIMIT - usedHeight) / ROW_HEIGHT_EST);
+                if (maxRows < 1) maxRows = 5; // تأمين
+                const takeRows = Math.min(maxRows, tempItems.length - itemPointer);
+                const pageItems = tempItems.slice(itemPointer, itemPointer + takeRows);
+                pagesData.push({
+                    items: pageItems,
+                    startSerial: startIdx
+                });
+                startIdx += takeRows;
+                itemPointer += takeRows;
+            }
             
-            const titleSpan = document.createElement('div');
-            titleSpan.style.fontSize = '1.6rem';
-            titleSpan.style.fontWeight = 'bold';
-            titleSpan.style.color = 'white';
-            titleSpan.innerText = 'شركة نايف للأغذية';
-            
-            const leftDate = document.createElement('div');
-            leftDate.style.fontSize = '0.7rem';
-            leftDate.style.color = '#ffefd0';
-            leftDate.innerHTML = `تقرير تجميع الكميات<br>التاريخ: ${new Date().toLocaleDateString('ar-KW')}`;
-            
-            const logoTitleDiv = document.createElement('div');
-            logoTitleDiv.style.display = 'flex';
-            logoTitleDiv.style.alignItems = 'center';
-            logoTitleDiv.style.gap = '15px';
-            logoTitleDiv.appendChild(logoImg);
-            logoTitleDiv.appendChild(titleSpan);
-            headerDiv.appendChild(logoTitleDiv);
-            headerDiv.appendChild(leftDate);
-            pdfContainer.appendChild(headerDiv);
-            
-            // جدول PDF للأصناف المحددة فقط
-            const tableElem = document.createElement('table');
-            tableElem.style.width = '100%';
-            tableElem.style.borderCollapse = 'collapse';
-            tableElem.style.fontSize = '12px';
-            tableElem.style.marginTop = '20px';
-            tableElem.style.border = '1px solid #ccc';
-            
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            ['#', 'اسم الصنف (RMName)', 'إجمالي الكمية', 'وحدة القياس'].forEach(text => {
-                const th = document.createElement('th');
-                th.innerText = text;
-                th.style.backgroundColor = '#2c3e50';
-                th.style.color = 'white';
-                th.style.padding = '8px';
-                th.style.border = '1px solid #aaa';
-                th.style.textAlign = 'center';
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            tableElem.appendChild(thead);
-            
-            const tbody = document.createElement('tbody');
-            selectedItems.forEach((item, idx) => {
-                const tr = document.createElement('tr');
-                const tdNum = document.createElement('td'); tdNum.innerText = (idx+1).toString(); tdNum.style.border = '1px solid #ddd'; tdNum.style.padding = '6px'; tdNum.style.textAlign = 'center';
-                const tdName = document.createElement('td'); tdName.innerText = item.rmName; tdName.style.border = '1px solid #ddd'; tdName.style.padding = '6px'; tdName.style.textAlign = 'right';
-                const tdQty = document.createElement('td'); tdQty.innerText = Number.isInteger(item.totalQty) ? item.totalQty : item.totalQty.toFixed(2); tdQty.style.border = '1px solid #ddd'; tdQty.style.padding = '6px'; tdQty.style.textAlign = 'center';
-                const tdUom = document.createElement('td'); tdUom.innerText = item.uomName; tdUom.style.border = '1px solid #ddd'; tdUom.style.padding = '6px'; tdUom.style.textAlign = 'center';
-                tr.appendChild(tdNum); tr.appendChild(tdName); tr.appendChild(tdQty); tr.appendChild(tdUom);
-                tbody.appendChild(tr);
-            });
-            // صف إجمالي المحدد
-            const totalRow = document.createElement('tr');
-            const totalLabel = document.createElement('td'); totalLabel.colSpan = 2; totalLabel.innerText = 'عدد الأصناف المختارة'; totalLabel.style.fontWeight = 'bold'; totalLabel.style.backgroundColor = '#f1f9fe'; totalLabel.style.padding = '8px';
-            const totalVal = document.createElement('td'); totalVal.colSpan = 2; totalVal.innerText = selectedItems.length.toString(); totalVal.style.fontWeight = 'bold'; totalVal.style.backgroundColor = '#f1f9fe'; totalVal.style.padding = '8px';
-            totalRow.appendChild(totalLabel); totalRow.appendChild(totalVal);
-            tbody.appendChild(totalRow);
-            tableElem.appendChild(tbody);
-            pdfContainer.appendChild(tableElem);
-            
-            const footerNote = document.createElement('div');
-            footerNote.style.marginTop = '25px';
-            footerNote.style.fontSize = '9px';
-            footerNote.style.textAlign = 'center';
-            footerNote.style.color = '#7f8c8d';
-            footerNote.innerText = `تم إنشاء التقرير بواسطة شركة نايف للأغذية - الأصناف المحددة: ${selectedItems.length}`;
-            pdfContainer.appendChild(footerNote);
-            
-            // انتظار تحميل الصور (بسيط)
-            await new Promise(resolve => setTimeout(resolve, 200));
-            const canvas = await html2canvas(pdfContainer, { scale: 2, backgroundColor: '#ffffff', logging: false });
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const totalPages = pagesData.length;
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'pt', 'a4');
-            const imgWidth = pdf.internal.pageSize.getWidth();
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`تقرير_نايف_المحدد_${new Date().toISOString().slice(0,19)}.pdf`);
             
-            document.body.removeChild(pdfContainer);
+            for (let p = 0; p < pagesData.length; p++) {
+                const page = pagesData[p];
+                // إنشاء حاوية الصفحة مؤقتًا داخل container (نظيف)
+                const pageWrapper = document.createElement('div');
+                pageWrapper.style.width = '794px';
+                pageWrapper.style.backgroundColor = '#fff';
+                pageWrapper.style.padding = '15px 20px';
+                pageWrapper.style.boxSizing = 'border-box';
+                
+                // إضافة الرأس
+                const header = createPageHeader(p+1, totalPages);
+                pageWrapper.appendChild(header);
+                
+                // إضافة الجدول
+                const table = createTableForItems(page.items, page.startSerial);
+                pageWrapper.appendChild(table);
+                
+                // إضافة تذييل
+                const footer = createFooter(page.items.length, selectedItems.length);
+                pageWrapper.appendChild(footer);
+                
+                container.appendChild(pageWrapper);
+                
+                // تحويل هذه الصفحة إلى صورة
+                const canvas = await html2canvas(pageWrapper, { scale: 2, backgroundColor: '#fff', logging: false });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                if (p > 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                
+                // إزالة الصفحة من الـ DOM لتجنب التراكم
+                container.removeChild(pageWrapper);
+            }
+            
+            // حفظ الملف
+            pdf.save(`تقرير_نايف_متعدد_الصفحات_${new Date().toISOString().slice(0,19)}.pdf`);
+            document.body.removeChild(container);
         } catch (err) {
             console.error("PDF ERROR:", err);
-            alert("حدث خطأ أثناء إنشاء PDF: " + (err.message || "غير معروف، تأكد من الاتصال بالإنترنت لتحميل المكتبات"));
+            alert("حدث خطأ أثناء إنشاء PDF متعدد الصفحات: " + (err.message || "يرجى التحقق من الاتصال بالإنترنت"));
         } finally {
             exportPdfBtn.innerText = originalText;
             if (rawDataValid && selectedIndices.size > 0) exportPdfBtn.disabled = false;
